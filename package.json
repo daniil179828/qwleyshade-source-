@@ -1,0 +1,5 @@
+{
+  "name": "qwleyshade-downloads",
+  "private": true,
+  "dependencies": { "@vercel/blob": "latest" }
+}
