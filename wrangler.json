@@ -1,0 +1,9 @@
+{
+  "name": "qwleyshade",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-10",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  }
+}

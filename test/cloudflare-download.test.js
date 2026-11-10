@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { onRequest, selectBuild } from '../public/_worker.js';
+import { onRequest, selectBuild } from '../worker/index.js';
 
 const SHA = 'c'.repeat(40);
 const TREE = 'd'.repeat(40);
@@ -123,7 +123,7 @@ test('range requests are proxied', async () => {
 });
 
 test('bad platform, bad method and failed upstream', async () => {
-  const fresh = await import('../public/_worker.js?missing-build');
+  const fresh = await import('../worker/index.js?missing-build');
   const restore = stub([['api.github.com', url => new Response(JSON.stringify(url.includes('/commits/') ? { sha: SHA, commit: { tree: { sha: TREE } } } : { tree: [file('readme.md')], truncated: false }), { status: 200 })]]);
   try {
     assert.equal((await call('linux')).status, 400);
@@ -145,7 +145,7 @@ test('unknown platform never reaches GitHub', async () => {
 });
 
 test('worker serves the download route and passes the rest to static assets', async () => {
-  const worker = (await import('../public/_worker.js?router')).default;
+  const worker = (await import('../worker/index.js?router')).default;
   const assets = [];
   const env = { ASSETS: { fetch: request => { assets.push(new URL(request.url).pathname); return new Response('asset'); } } };
   const page = await worker.fetch(new Request('https://qwleyshade.pro/assets/logo.png'), env);

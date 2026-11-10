@@ -46,7 +46,6 @@ async function githubJson(fetchImpl, token, path) {
   const response = await fetchImpl(`https://api.github.com/repos/${OWNER}/${path}`, {
     headers,
     signal: AbortSignal.timeout(10_000),
-    cache: 'no-store',
   });
   if (!response.ok) throw new Error(`GitHub API: HTTP ${response.status}`);
   return response.json();
@@ -154,6 +153,6 @@ export default {
     if (path === '/api/download' || path === '/api/download/') {
       return onRequest({ request, env, waitUntil: () => {} });
     }
-    return env.ASSETS.fetch(request);
+    return env.ASSETS?.fetch ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
   },
 };
