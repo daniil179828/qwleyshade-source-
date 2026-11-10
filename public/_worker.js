@@ -147,3 +147,13 @@ export async function onRequest(context) {
     return json({ error: error.status ? error.message : 'Не удалось получить сборку с GitHub. Попробуйте позже.' }, error.status || 502);
   }
 }
+
+export default {
+  async fetch(request, env) {
+    const path = new URL(request.url).pathname;
+    if (path === '/api/download' || path === '/api/download/') {
+      return onRequest({ request, env, waitUntil: () => {} });
+    }
+    return env.ASSETS.fetch(request);
+  },
+};

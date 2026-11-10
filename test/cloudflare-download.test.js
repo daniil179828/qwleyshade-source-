@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { onRequest, selectBuild } from '../functions/api/download.js';
+import { onRequest, selectBuild } from '../public/_worker.js';
 
 const SHA = 'c'.repeat(40);
 const TREE = 'd'.repeat(40);
@@ -123,7 +123,7 @@ test('range requests are proxied', async () => {
 });
 
 test('bad platform, bad method and failed upstream', async () => {
-  const fresh = await import('../functions/api/download.js?missing-build');
+  const fresh = await import('../public/_worker.js?missing-build');
   const restore = stub([['api.github.com', url => new Response(JSON.stringify(url.includes('/commits/') ? { sha: SHA, commit: { tree: { sha: TREE } } } : { tree: [file('readme.md')], truncated: false }), { status: 200 })]]);
   try {
     assert.equal((await call('linux')).status, 400);
@@ -144,6 +144,17 @@ test('unknown platform never reaches GitHub', async () => {
   assert.equal(response.status, 400);
 });
 
+test('worker serves the download route and passes the rest to static assets', async () => {
+  const worker = (await import('../public/_worker.js?router')).default;
+  const assets = [];
+  const env = { ASSETS: { fetch: request => { assets.push(new URL(request.url).pathname); return new Response('asset'); } } };
+  const page = await worker.fetch(new Request('https://qwleyshade.pro/assets/logo.png'), env);
+  assert.equal(await page.text(), 'asset');
+  const bad = await worker.fetch(new Request('https://qwleyshade.pro/api/download?platform=linux'), env);
+  assert.equal(bad.status, 400);
+  assert.deepEqual(assets, ['/assets/logo.png']);
+});
+
 test('assets referenced by the pages exist locally', async () => {
   const { readFile } = await import('node:fs/promises');
   const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
@@ -153,9 +164,3 @@ test('assets referenced by the pages exist locally', async () => {
   }
 });
 
-test('both function locations stay in sync', async () => {
-  const { readFile } = await import('node:fs/promises');
-  const root = await readFile(new URL('../functions/api/download.js', import.meta.url), 'utf8');
-  const output = await readFile(new URL('../public/functions/api/download.js', import.meta.url), 'utf8');
-  assert.equal(root, output);
-});
