@@ -152,3 +152,10 @@ test('assets referenced by the pages exist locally', async () => {
     await readFile(new URL('../public/' + match[0], import.meta.url));
   }
 });
+
+test('both function locations stay in sync', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const root = await readFile(new URL('../functions/api/download.js', import.meta.url), 'utf8');
+  const output = await readFile(new URL('../public/functions/api/download.js', import.meta.url), 'utf8');
+  assert.equal(root, output);
+});
